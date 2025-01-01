@@ -1,3 +1,4 @@
 {
-    server: ["one"]
+    "success": true,
+    "socketServerUrl": "https://socket.truffio.com"
 }
