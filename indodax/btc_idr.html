@@ -10,12 +10,14 @@
         $(document).ready(function() {
             let prevPrice = null;
             let lastPrice = null;
-            let balance = 10000000; // Rp. 10.000.000
-            let capital = 100000; // Rp. 100.000
+            let balance = 10000000;
+            let capital = 100000;
             let holdingBTC = 0;
             let downCount = 0;
-            const makerFee = 0.002322; // 0.2322%
-            const takerFee = 0.003322; // 0.3322%
+            let multiplier = 3;
+            let makerFee = 0.002322;
+            let takerFee = 0.003322;
+            let interval;
 
             function fetchPrice() {
                 $.getJSON("https://indodax.com/api/btc_idr/ticker", function(data) {
@@ -37,7 +39,7 @@
                         } else {
                             color = "text-danger";
                             action = "Buy";
-                            capital *= downCount > 0 ? 3 : 1;
+                            capital *= downCount > 0 ? multiplier : 1;
                             if (balance >= capital) {
                                 let buyBTC = capital / newPrice;
                                 let fee = buyBTC * takerFee;
@@ -61,14 +63,50 @@
                 });
             }
 
-            fetchPrice();
-            setInterval(fetchPrice, 60000);
+            $("#start-simulation").click(function() {
+                balance = parseFloat($("#initial-balance").val());
+                capital = parseFloat($("#initial-capital").val());
+                multiplier = parseFloat($("#multiplier").val());
+                makerFee = parseFloat($("#maker-fee").val());
+                takerFee = parseFloat($("#taker-fee").val());
+                holdingBTC = 0;
+                downCount = 0;
+                lastPrice = null;
+                clearInterval(interval);
+                fetchPrice();
+                interval = setInterval(fetchPrice, 60000);
+            });
         });
     </script>
 </head>
 <body class="d-flex justify-content-center align-items-center vh-100 bg-light">
     <div class="container bg-white p-4 rounded shadow text-center">
         <h1 class="mb-4">BTC/IDR Price Tracker</h1>
+        <div class="row mb-3">
+            <div class="col-md-2">
+                <label>Initial Balance (IDR)</label>
+                <input type="number" id="initial-balance" class="form-control" value="10000000">
+            </div>
+            <div class="col-md-2">
+                <label>Initial Capital (IDR)</label>
+                <input type="number" id="initial-capital" class="form-control" value="100000">
+            </div>
+            <div class="col-md-2">
+                <label>Multiplier</label>
+                <input type="number" id="multiplier" class="form-control" value="3">
+            </div>
+            <div class="col-md-2">
+                <label>Maker Fee (%)</label>
+                <input type="number" id="maker-fee" class="form-control" value="0.002322" step="0.000001">
+            </div>
+            <div class="col-md-2">
+                <label>Taker Fee (%)</label>
+                <input type="number" id="taker-fee" class="form-control" value="0.003322" step="0.000001">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button id="start-simulation" class="btn btn-primary w-100">Start</button>
+            </div>
+        </div>
         <table class="table table-bordered">
             <thead class="table-light">
                 <tr>
