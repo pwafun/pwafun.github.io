@@ -19,39 +19,44 @@
             let takerFee = 0.003322;
             let interval;
             let pair = "btc_idr";
+            let threshold = 0.005; // 0.5%
 
             function fetchPrice() {
                 $.getJSON(`https://indodax.com/api/${pair}/ticker`, function(data) {
                     let newPrice = parseFloat(data.ticker.last);
                     let color = "text-dark";
-                    let action = "-";
+                    let action = "Hold";
+                    let priceChange = lastPrice ? (newPrice - lastPrice) / lastPrice : 0;
 
                     if (lastPrice !== null) {
-                        if (newPrice > lastPrice) {
-                            color = "text-success";
-                            action = "Sell";
-                            if (holdingBTC > 0) {
-                                let sellAmount = holdingBTC * newPrice;
-                                let fee = sellAmount * makerFee;
-                                balance += sellAmount - fee;
-                                holdingBTC = 0;
-                                downCount = 0;
+                        if (Math.abs(priceChange) >= threshold) {
+                            if (newPrice > lastPrice) {
+                                color = "text-success";
+                                action = "Sell";
+                                if (holdingBTC > 0) {
+                                    let sellAmount = holdingBTC * newPrice;
+                                    let fee = sellAmount * makerFee;
+                                    balance += sellAmount - fee;
+                                    holdingBTC = 0;
+                                    downCount = 0;
+                                }
+                            } else {
+                                color = "text-danger";
+                                action = "Buy";
+                                capital *= downCount > 0 ? multiplier : 1;
+                                if (balance >= capital) {
+                                    let buyBTC = capital / newPrice;
+                                    let fee = buyBTC * takerFee;
+                                    holdingBTC += buyBTC - fee;
+                                    balance -= capital;
+                                    downCount++;
+                                }
                             }
-                        } else {
-                            color = "text-danger";
-                            action = "Buy";
-                            capital *= downCount > 0 ? multiplier : 1;
-                            if (balance >= capital) {
-                                let buyBTC = capital / newPrice;
-                                let fee = buyBTC * takerFee;
-                                holdingBTC += buyBTC - fee;
-                                balance -= capital;
-                                downCount++;
-                            }
+                            prevPrice = lastPrice;
                         }
                     }
 
-                    $("#prev-price").text(lastPrice ? lastPrice.toLocaleString("id-ID") : "-");
+                    $("#prev-price").text(prevPrice ? prevPrice.toLocaleString("id-ID") : "-");
                     $("#last-price").text(newPrice.toLocaleString("id-ID"))
                                      .removeClass("text-dark text-success text-danger")
                                      .addClass(color);
@@ -59,7 +64,6 @@
                     $("#balance").text(balance.toLocaleString("id-ID"));
                     $("#holding").text(holdingBTC.toFixed(8));
                     
-                    prevPrice = lastPrice;
                     lastPrice = newPrice;
                 });
             }
@@ -74,6 +78,7 @@
                 holdingBTC = 0;
                 downCount = 0;
                 lastPrice = null;
+                prevPrice = null;
                 clearInterval(interval);
                 fetchPrice();
                 interval = setInterval(fetchPrice, 60000);
