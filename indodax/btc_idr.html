@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BTC/IDR Last Price</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            let lastPrice = null;
+            function fetchPrice() {
+                $.getJSON("https://indodax.com/api/btc_idr/ticker", function(data) {
+                    let newPrice = parseFloat(data.ticker.last);
+                    let color = "text-dark";
+                    
+                    if (lastPrice !== null) {
+                        color = newPrice > lastPrice ? "text-success" : "text-danger";
+                    }
+                    
+                    $("#last-price").text(newPrice.toLocaleString("id-ID"))
+                                     .removeClass("text-dark text-success text-danger")
+                                     .addClass(color);
+                    lastPrice = newPrice;
+                });
+            }
+            
+            fetchPrice();
+            setInterval(fetchPrice, 60000);
+        });
+    </script>
+</head>
+<body class="d-flex justify-content-center align-items-center vh-100 bg-light">
+    <div class="container bg-white p-4 rounded shadow text-center">
+        <h1 class="mb-4">BTC/IDR Last Price</h1>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>Last Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td id="last-price" class="fw-bold">Loading...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
