@@ -10,28 +10,51 @@
         $(document).ready(function() {
             let prevPrice = null;
             let lastPrice = null;
+            let balance = 10000000; // Rp. 10.000.000
+            let capital = 100000; // Rp. 100.000
+            let holdingBTC = 0;
+            let downCount = 0;
+
             function fetchPrice() {
                 $.getJSON("https://indodax.com/api/btc_idr/ticker", function(data) {
                     let newPrice = parseFloat(data.ticker.last);
                     let color = "text-dark";
                     let action = "-";
-                    
+
                     if (lastPrice !== null) {
-                        color = newPrice > lastPrice ? "text-success" : "text-danger";
-                        action = newPrice > lastPrice ? "Sell" : "Buy";
+                        if (newPrice > lastPrice) {
+                            color = "text-success";
+                            action = "Sell";
+                            if (holdingBTC > 0) {
+                                balance += holdingBTC * newPrice;
+                                holdingBTC = 0;
+                                downCount = 0;
+                            }
+                        } else {
+                            color = "text-danger";
+                            action = "Buy";
+                            capital *= downCount > 0 ? 3 : 1;
+                            if (balance >= capital) {
+                                holdingBTC += capital / newPrice;
+                                balance -= capital;
+                                downCount++;
+                            }
+                        }
                     }
-                    
+
                     $("#prev-price").text(lastPrice ? lastPrice.toLocaleString("id-ID") : "-");
                     $("#last-price").text(newPrice.toLocaleString("id-ID"))
                                      .removeClass("text-dark text-success text-danger")
                                      .addClass(color);
                     $("#action").text(action);
+                    $("#balance").text(balance.toLocaleString("id-ID"));
+                    $("#holding").text(holdingBTC.toFixed(8));
                     
                     prevPrice = lastPrice;
                     lastPrice = newPrice;
                 });
             }
-            
+
             fetchPrice();
             setInterval(fetchPrice, 60000);
         });
@@ -46,6 +69,8 @@
                     <th>Previous Price</th>
                     <th>Last Price</th>
                     <th>Action</th>
+                    <th>Balance (IDR)</th>
+                    <th>Holding (BTC)</th>
                 </tr>
             </thead>
             <tbody>
@@ -53,6 +78,8 @@
                     <td id="prev-price" class="fw-bold">-</td>
                     <td id="last-price" class="fw-bold">Loading...</td>
                     <td id="action" class="fw-bold">-</td>
+                    <td id="balance" class="fw-bold">10,000,000</td>
+                    <td id="holding" class="fw-bold">0.00000000</td>
                 </tr>
             </tbody>
         </table>
