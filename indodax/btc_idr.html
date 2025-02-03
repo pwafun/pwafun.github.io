@@ -8,19 +8,26 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         $(document).ready(function() {
+            let prevPrice = null;
             let lastPrice = null;
             function fetchPrice() {
                 $.getJSON("https://indodax.com/api/btc_idr/ticker", function(data) {
                     let newPrice = parseFloat(data.ticker.last);
                     let color = "text-dark";
+                    let action = "-";
                     
                     if (lastPrice !== null) {
                         color = newPrice > lastPrice ? "text-success" : "text-danger";
+                        action = newPrice > lastPrice ? "Sell" : "Buy";
                     }
                     
+                    $("#prev-price").text(lastPrice ? lastPrice.toLocaleString("id-ID") : "-");
                     $("#last-price").text(newPrice.toLocaleString("id-ID"))
                                      .removeClass("text-dark text-success text-danger")
                                      .addClass(color);
+                    $("#action").text(action);
+                    
+                    prevPrice = lastPrice;
                     lastPrice = newPrice;
                 });
             }
@@ -32,16 +39,20 @@
 </head>
 <body class="d-flex justify-content-center align-items-center vh-100 bg-light">
     <div class="container bg-white p-4 rounded shadow text-center">
-        <h1 class="mb-4">BTC/IDR Last Price</h1>
+        <h1 class="mb-4">BTC/IDR Price Tracker</h1>
         <table class="table table-bordered">
             <thead class="table-light">
                 <tr>
+                    <th>Previous Price</th>
                     <th>Last Price</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
+                    <td id="prev-price" class="fw-bold">-</td>
                     <td id="last-price" class="fw-bold">Loading...</td>
+                    <td id="action" class="fw-bold">-</td>
                 </tr>
             </tbody>
         </table>
