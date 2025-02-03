@@ -14,6 +14,8 @@
             let capital = 100000; // Rp. 100.000
             let holdingBTC = 0;
             let downCount = 0;
+            const makerFee = 0.002322; // 0.2322%
+            const takerFee = 0.003322; // 0.3322%
 
             function fetchPrice() {
                 $.getJSON("https://indodax.com/api/btc_idr/ticker", function(data) {
@@ -26,7 +28,9 @@
                             color = "text-success";
                             action = "Sell";
                             if (holdingBTC > 0) {
-                                balance += holdingBTC * newPrice;
+                                let sellAmount = holdingBTC * newPrice;
+                                let fee = sellAmount * makerFee;
+                                balance += sellAmount - fee;
                                 holdingBTC = 0;
                                 downCount = 0;
                             }
@@ -35,7 +39,9 @@
                             action = "Buy";
                             capital *= downCount > 0 ? 3 : 1;
                             if (balance >= capital) {
-                                holdingBTC += capital / newPrice;
+                                let buyBTC = capital / newPrice;
+                                let fee = buyBTC * takerFee;
+                                holdingBTC += buyBTC - fee;
                                 balance -= capital;
                                 downCount++;
                             }
