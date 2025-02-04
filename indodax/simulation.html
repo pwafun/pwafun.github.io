@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Simulation</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/lumen/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/materia/bootstrap.min.css" rel="stylesheet" />
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         $(document).ready(function() {
@@ -18,8 +18,8 @@
             let makerFee = 0.002322;
             let takerFee = 0.003322;
             let interval;
-            let pair = "btc_idr";
-            let threshold = 0.005; // 0.5%
+            let pair = "pepe_idr";
+            let threshold = 0.006; // 0.6%
             let firstBuy = true;
             let minutes = 0;
 
@@ -110,7 +110,7 @@
         <h1 class="my-4">Simulation</h1>
         <div class="row">
             <div class="col-md-6">
-                <table class="table">
+                <table>
                     <tbody>
                         <tr><td><label>Trading Pair</label></td><td><input type="text" id="pair" class="form-control" value="btc_idr"></td></tr>
                         <tr><td><label>Multiplier</label></td><td><input type="number" id="multiplier" class="form-control" value="3"></td></tr>
@@ -120,7 +120,7 @@
                 </table>
             </div>
             <div class="col-md-6">
-                <table class="table">
+                <table>
                     <tbody>
                         <tr><td><label>Maker Fee (%)</label></td><td><input type="number" id="maker-fee" class="form-control" value="0.002322" step="0.000001"></td></tr>
                         <tr><td><label>Taker Fee (%)</label></td><td><input type="number" id="taker-fee" class="form-control" value="0.003322" step="0.000001"></td></tr>
