@@ -28,7 +28,6 @@
                     let newPrice = data.ticker.last;
                     let color = "text-dark";
                     let action = "Hold";
-                    let percentChange = lastPrice ? ((newPrice - lastPrice) / lastPrice * 100).toFixed(2) + '%' : '-';
                     minutes += 1;
 
                     if (firstBuy) {
@@ -74,13 +73,15 @@
                     $("#last-price").text(newPrice)
                                      .removeClass("text-dark text-success text-danger")
                                      .addClass(color);
-                    $("#percent-change").text(percentChange);
                     $("#action").text(action);
                     $("#balance").text(balance.toLocaleString("id-ID"));
                     $("#holding").text(holdingBTC.toFixed(8));
                     $("#minutes").text(minutes);
                     
                     lastPrice = newPrice;
+
+                    let percentChange = lastPrice ? ((newPrice - lastPrice) / lastPrice * 100).toFixed(2) + '%' : '-';
+                    $("#percent-change").text(percentChange);
                 });
             }
 
