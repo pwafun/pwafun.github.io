@@ -10,16 +10,16 @@
         $(document).ready(function() {
             let prevPrice = null;
             let lastPrice = null;
-            let balance = 10000000;
-            let capital = 100000;
+            let balance = null;
+            let capital = null;
             let holdingBTC = 0;
             let downCount = 0;
-            let multiplier = 3;
-            let makerFee = 0.002322;
-            let takerFee = 0.003322;
+            let multiplier = null;
+            let makerFee = null;
+            let takerFee = null;
             let interval;
             let pair = "pepe_idr";
-            let threshold = 0.006; // 0.6%
+            let threshold = null;
             let firstBuy = true;
             let minutes = 0;
 
@@ -124,7 +124,7 @@
                     <tbody>
                         <tr><td><label>Maker Fee (%)</label></td><td><input type="number" id="maker-fee" class="form-control" value="0.002322" step="0.000001"></td></tr>
                         <tr><td><label>Taker Fee (%)</label></td><td><input type="number" id="taker-fee" class="form-control" value="0.003322" step="0.000001"></td></tr>
-                        <tr><td><label>Threshold (%)</label></td><td><input type="number" id="threshold" class="form-control" value="0.5" step="0.01"></td></tr>
+                        <tr><td><label>Threshold (%)</label></td><td><input type="number" id="threshold" class="form-control" value="0.6" step="0.1"></td></tr>
                         <tr><td colspan="2" class="text-center"><button id="start-simulation" class="btn btn-primary w-100">Start</button></td></tr>
                     </tbody>
                 </table>
