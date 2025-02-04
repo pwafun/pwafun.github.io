@@ -69,7 +69,9 @@
                         }
                     }
 
-                    $("#prev-price").text(prevPrice ? prevPrice : "-");
+                    let percentChange = ((prevPrice - lastPrice) / lastPrice * 100) + '%';
+
+                    $("#prev-price").text(prevPrice);
                     $("#last-price").text(newPrice)
                                      .removeClass("text-dark text-success text-danger")
                                      .addClass(color);
@@ -77,8 +79,6 @@
                     $("#balance").text(balance.toLocaleString("id-ID"));
                     $("#holding").text(holdingBTC.toFixed(8));
                     $("#minutes").text(minutes);
-
-                    let percentChange = lastPrice ? ((newPrice - lastPrice) / lastPrice * 100) + '%' : '-';
                     $("#percent-change").text(percentChange);
                     
                     lastPrice = newPrice;
