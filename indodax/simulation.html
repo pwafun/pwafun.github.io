@@ -25,7 +25,7 @@
 
             function fetchPrice() {
                 $.getJSON(`https://indodax.com/api/${pair}/ticker`, function(data) {
-                    let newPrice = parseFloat(data.ticker.last);
+                    let newPrice = data.ticker.last;
                     let color = "text-dark";
                     let action = "Hold";
                     minutes += 1;
@@ -69,8 +69,8 @@
                         }
                     }
 
-                    $("#prev-price").text(prevPrice ? prevPrice.toLocaleString("id-ID") : "-");
-                    $("#last-price").text(newPrice.toLocaleString("id-ID"))
+                    $("#prev-price").text(prevPrice ? prevPrice : "-");
+                    $("#last-price").text(newPrice)
                                      .removeClass("text-dark text-success text-danger")
                                      .addClass(color);
                     $("#action").text(action);
@@ -105,7 +105,7 @@
 </head>
 <body class="d-flex justify-content-center align-items-center vh-100 bg-light">
     <div class="container bg-white p-4 rounded shadow text-center">
-        <h1 class="mb-4">Simulation</h1>
+        <h1 class="my-4">Simulation</h1>
         <div class="row">
             <div class="col-md-6">
                 <table class="table table-bordered">
