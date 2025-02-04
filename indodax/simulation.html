@@ -28,6 +28,7 @@
                     let newPrice = data.ticker.last;
                     let color = "text-dark";
                     let action = "Hold";
+                    let priceChange = 0;
                     minutes += 1;
 
                     if (firstBuy) {
@@ -69,7 +70,7 @@
                         }
                     }
 
-                    let percentChange = ((newPrice - prevPrice) / prevPrice * 100) + '%';
+                    let percentChange = priceChange + '%';
 
                     $("#prev-price").text(prevPrice);
                     $("#last-price").text(newPrice)
