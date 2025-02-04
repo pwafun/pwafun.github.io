@@ -106,16 +106,16 @@
     </script>
 </head>
 <body class="d-flex justify-content-center align-items-center vh-100 bg-light">
-    <div class="container bg-white p-4 rounded shadow text-center">
-        <h1 class="my-4">Simulation</h1>
+    <div class="container bg-white p-4 rounded shadow">
+        <h2 class="my-3 text-center">BOT Simulation</h2>
         <div class="row">
             <div class="col-md-6">
                 <table>
                     <tbody>
                         <tr><td><label>Trading Pair</label></td><td><input type="text" id="pair" class="form-control" value="btc_idr"></td></tr>
                         <tr><td><label>Multiplier</label></td><td><input type="number" id="multiplier" class="form-control" value="3"></td></tr>
-                        <tr><td><label>Balance (IDR)</label></td><td><input type="number" id="initial-balance" class="form-control" value="10000000"></td></tr>
-                        <tr><td><label>Capital (IDR)</label></td><td><input type="number" id="initial-capital" class="form-control" value="100000"></td></tr>
+                        <tr><td><label>Balance (IDR)</label></td><td><input type="number" id="initial-balance" class="form-control" value="10000000" step="100000"></td></tr>
+                        <tr><td><label>Capital (IDR)</label></td><td><input type="number" id="initial-capital" class="form-control" value="100000" step="10000"></td></tr>
                     </tbody>
                 </table>
             </div>
