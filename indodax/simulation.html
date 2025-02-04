@@ -69,7 +69,7 @@
                         }
                     }
 
-                    let percentChange = ((prevPrice - newPrice) / newPrice * 100) + '%';
+                    let percentChange = ((newPrice - prevPrice) / prevPrice * 100) + '%';
 
                     $("#prev-price").text(prevPrice);
                     $("#last-price").text(newPrice)
