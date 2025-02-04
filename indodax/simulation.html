@@ -77,11 +77,11 @@
                     $("#balance").text(balance.toLocaleString("id-ID"));
                     $("#holding").text(holdingBTC.toFixed(8));
                     $("#minutes").text(minutes);
+
+                    let percentChange = lastPrice ? ((newPrice - lastPrice) / lastPrice * 100) + '%' : '-';
+                    $("#percent-change").text(percentChange);
                     
                     lastPrice = newPrice;
-
-                    let percentChange = lastPrice ? ((newPrice - lastPrice) / lastPrice * 100).toFixed(2) + '%' : '-';
-                    $("#percent-change").text(percentChange);
                 });
             }
 
