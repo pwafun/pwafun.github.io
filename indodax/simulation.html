@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Simulation</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/materia/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/sandstone/bootstrap.min.css" rel="stylesheet" />
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         $(document).ready(function() {
@@ -114,8 +114,8 @@
                     <tbody>
                         <tr><td><label>Trading Pair</label></td><td><input type="text" id="pair" class="form-control" value="btc_idr"></td></tr>
                         <tr><td><label>Multiplier</label></td><td><input type="number" id="multiplier" class="form-control" value="3"></td></tr>
-                        <tr><td><label>Initial Balance (IDR)</label></td><td><input type="number" id="initial-balance" class="form-control" value="10000000"></td></tr>
-                        <tr><td><label>Initial Capital (IDR)</label></td><td><input type="number" id="initial-capital" class="form-control" value="100000"></td></tr>
+                        <tr><td><label>Balance (IDR)</label></td><td><input type="number" id="initial-balance" class="form-control" value="10000000"></td></tr>
+                        <tr><td><label>Capital (IDR)</label></td><td><input type="number" id="initial-capital" class="form-control" value="100000"></td></tr>
                     </tbody>
                 </table>
             </div>
@@ -136,10 +136,10 @@
                     <th>Minutes</th>
                     <th>Prev Price</th>
                     <th>Last Price</th>
-                    <th>Percent Change</th>
-                    <th>Action</th>
-                    <th>Balance (IDR)</th>
-                    <th>Holding (COIN)</th>
+                    <th>Changes</th>
+                    <th>Actions</th>
+                    <th>Balance</th>
+                    <th>Holding</th>
                 </tr>
             </thead>
             <tbody>
