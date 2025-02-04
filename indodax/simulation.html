@@ -20,15 +20,24 @@
             let interval;
             let pair = "btc_idr";
             let threshold = 0.005; // 0.5%
+            let firstAction = true;
 
             function fetchPrice() {
                 $.getJSON(`https://indodax.com/api/${pair}/ticker`, function(data) {
                     let newPrice = parseFloat(data.ticker.last);
                     let color = "text-dark";
                     let action = "Hold";
-                    let priceChange = lastPrice ? (newPrice - lastPrice) / lastPrice : 0;
 
-                    if (lastPrice !== null) {
+                    if (lastPrice === null) {
+                        prevPrice = newPrice;
+                        action = "Buy";
+                        let buyBTC = capital / newPrice;
+                        let fee = buyBTC * takerFee;
+                        holdingBTC = buyBTC - fee;
+                        balance -= capital;
+                    } else {
+                        let priceChange = (newPrice - lastPrice) / lastPrice;
+
                         if (Math.abs(priceChange) >= threshold) {
                             if (newPrice > lastPrice) {
                                 color = "text-success";
