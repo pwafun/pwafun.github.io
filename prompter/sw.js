@@ -33,7 +33,13 @@ function isRuntimeCacheable(url) {
 // Install: simpan static asset yang sudah kita ketahui
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) => cache.addAll(PRECACHE_URLS))
+    caches.open(STATIC_CACHE).then(cache =>
+      cache.addAll(
+        PRECACHE_URLS.map(u =>
+          new Request(u, { method: 'GET', mode: 'cors', credentials: 'omit' })
+        )
+      )
+    )
   );
   self.skipWaiting();
 });
