@@ -8,9 +8,7 @@ const PRECACHE_URLS = [
   './', // halaman utama
   // CDN utama di HTML:
   'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs',
-  'https://cdn.jsdelivr.net/npm/@tensorflow-models/universal-sentence-encoder',
-  'https://cdn.tailwindcss.com',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'
+  'https://cdn.jsdelivr.net/npm/@tensorflow-models/universal-sentence-encoder'
 ];
 
 // Pola host yang ingin kita cache saat jalan (runtime), termasuk file model USE & font
