@@ -1,67 +1,90 @@
-/* sw.js */
-const VERSION = 'v1.0.0';                         // ganti versi ini untuk invalidasi cache
+/* sw.js — PWA runtime & precache for TFJS + USE + CDN assets
+   Scope: direktori tempat file ini berada (dan turunannya)
+*/
+
+const VERSION = 'v1.0.0';
 const STATIC_CACHE = `static-${VERSION}`;
 const RUNTIME_CACHE = `runtime-${VERSION}`;
 
-// Precache resource yang dipakai langsung di HTML (pakai URL persis seperti di <script>/<link>)
+// URL yang dipakai langsung di HTML — tulis persis seperti di <script>/<link>
 const PRECACHE_URLS = [
-  './', // halaman utama
-  // CDN utama di HTML:
+  // CDN di HTML (sesuaikan bila kamu mem-pin versi)
   'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs',
   'https://cdn.jsdelivr.net/npm/@tensorflow-models/universal-sentence-encoder'
 ];
 
-// Pola host yang ingin kita cache saat jalan (runtime), termasuk file model USE & font
-const RUNTIME_ALLOWED_HOSTS = [
-  'cdn.jsdelivr.net',
-  'cdnjs.cloudflare.com',
-  'fonts.gstatic.com',                 // font yang ditarik dari CSS fontawesome
-  'storage.googleapis.com',            // sebagian besar tfjs models di-host di sini
-  'tfhub.dev'                          // alternatif host model
-];
+// Host lintas-origin yang boleh dicache saat runtime
+const RUNTIME_ALLOWED_HOSTS = new Set([
+  'storage.googleapis.com', // tfjs/tfhub model shard
+  'tfhub.dev'               // tfhub redirector
+]);
 
-// Helper: cek apakah request boleh dicache via runtime rules
-function isRuntimeCacheable(url) {
+// ------- Helper -------
+function isHTMLRequest(req) {
+  const accept = req.headers.get('accept') || '';
+  return req.destination === 'document' || accept.includes('text/html');
+}
+
+function isRuntimeCacheable(urlStr) {
   try {
-    const u = new URL(url);
-    return RUNTIME_ALLOWED_HOSTS.includes(u.hostname);
+    const { hostname } = new URL(urlStr);
+    return RUNTIME_ALLOWED_HOSTS.has(hostname);
   } catch {
     return false;
   }
 }
 
-// Install: simpan static asset yang sudah kita ketahui
+// Buat Request lintas-origin yang aman CORS (tanpa kredensial)
+function makeCorsOmitRequest(input) {
+  const url = typeof input === 'string' ? input : input.url;
+  const integrity = (typeof input !== 'string' && input.integrity) ? input.integrity : undefined;
+  return new Request(url, {
+    method: 'GET',
+    mode: 'cors',
+    credentials: 'omit',
+    redirect: 'follow',
+    integrity
+  });
+}
+
+// ------- Install: precache -------
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(STATIC_CACHE).then(cache =>
-      cache.addAll(
-        PRECACHE_URLS.map(u =>
-          new Request(u, { method: 'GET', mode: 'cors', credentials: 'omit' })
-        )
-      )
-    )
-  );
+  event.waitUntil((async () => {
+    const cache = await caches.open(STATIC_CACHE);
+
+    // Gunakan Request khusus (cors + omit) agar tidak kena CORS credentials
+    const reqs = PRECACHE_URLS.map((u) => makeCorsOmitRequest(u));
+
+    // addAll akan fail jika salah satu gagal; bungkus dengan Promise.all settle
+    await Promise.all(reqs.map(async (req) => {
+      try {
+        const resp = await fetch(req);
+        if (resp && (resp.ok || resp.type === 'opaque')) {
+          await cache.put(req, resp.clone());
+        }
+      } catch (e) {
+        // Diamkan saja; resource ini bisa diambil saat runtime
+        // console.warn('Precache gagal:', req.url, e);
+      }
+    }));
+  })());
   self.skipWaiting();
 });
 
-// Activate: hapus cache lama kalau versi berubah
+// ------- Activate: bersihkan cache lama -------
 self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys
-          .filter((k) => k !== STATIC_CACHE && k !== RUNTIME_CACHE)
-          .map((k) => caches.delete(k))
-      )
-    )
-  );
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(
+      keys
+        .filter((k) => k !== STATIC_CACHE && k !== RUNTIME_CACHE)
+        .map((k) => caches.delete(k))
+    );
+  })());
   self.clients.claim();
 });
 
-// Strategy ringkas:
-// - HTML: network-first (agar cepat update halaman), fallback ke cache
-// - Asset CDN & file model: cache-first + stale-while-revalidate (biar kencang & tetap bisa update background)
-// - Lainnya: default network
+// ------- Fetch strategy -------
 self.addEventListener('fetch', (event) => {
   const req = event.request;
 
@@ -69,52 +92,95 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
 
   const url = new URL(req.url);
-  const isHTML = req.destination === 'document' || (req.headers.get('accept') || '').includes('text/html');
 
-  // HTML -> network-first
-  if (isHTML && url.origin === self.location.origin) {
-    event.respondWith((async () => {
-      try {
-        const fresh = await fetch(req);
-        const cache = await caches.open(STATIC_CACHE);
-        cache.put(req, fresh.clone());
-        return fresh;
-      } catch {
-        const cache = await caches.open(STATIC_CACHE);
-        const cached = await cache.match(req) || await cache.match('./');
-        return cached || new Response('Offline', { status: 503, statusText: 'Offline' });
-      }
-    })());
+  // 1) HTML same-origin -> network-first (fallback cache)
+  if (isHTMLRequest(req) && url.origin === self.location.origin) {
+    event.respondWith(networkFirstHTML(req));
     return;
   }
 
-  // Asset runtime (CDN, model USE, fonts) -> cache-first + SWR
+  // 2) Asset lintas-origin (CDN, model, fonts) -> cache-first + SWR dengan credentials: 'omit'
   if (isRuntimeCacheable(req.url)) {
-    event.respondWith((async () => {
-      const cache = await caches.open(RUNTIME_CACHE);
-      const cached = await cache.match(req);
-      const networkPromise = fetch(req, { mode: 'cors' })
-        .then((resp) => {
-          // simpan respons ke cache jika valid
-          if (resp && resp.status === 200) cache.put(req, resp.clone());
-          return resp;
-        })
-        .catch(() => null);
-
-      // Stale-while-revalidate: segera pakai cache jika ada, sambil update di belakang
-      return cached || (await networkPromise) || new Response('Offline', { status: 503 });
-    })());
+    event.respondWith(cacheFirstSWR(req));
     return;
   }
 
-  // Default -> coba network, fallback cache (jaga-jaga)
-  event.respondWith((async () => {
-    try {
-      return await fetch(req);
-    } catch {
-      const cache = await caches.open(RUNTIME_CACHE);
-      const cached = await cache.match(req);
-      return cached || new Response('Offline', { status: 503 });
+  // 3) Default: coba network, fallback cache runtime
+  event.respondWith(defaultNetworkFallback(req));
+});
+
+// ------- Strategies Implementation -------
+
+async function networkFirstHTML(req) {
+  const cache = await caches.open(STATIC_CACHE);
+  try {
+    const fresh = await fetch(req);
+    // Simpan versi terbaru ke cache
+    if (fresh && fresh.ok) {
+      await cache.put(req, fresh.clone());
     }
-  })());
+    return fresh;
+  } catch {
+    const cached = await cache.match(req) || await cache.match('./');
+    return cached || new Response('Offline', { status: 503, statusText: 'Offline' });
+  }
+}
+
+async function cacheFirstSWR(req) {
+  const cache = await caches.open(RUNTIME_CACHE);
+
+  // Normalisasikan request lintas-origin → CORS+omit
+  const cleanReq = makeCorsOmitRequest(req);
+
+  // 1) Coba cache dulu
+  const cached = await cache.match(cleanReq);
+  if (cached) {
+    // Revalidate di belakang layar (non-blocking)
+    revalidateInBackground(cleanReq, cache);
+    return cached;
+  }
+
+  // 2) Tidak ada di cache → coba fetch CORS+omit
+  try {
+    const resp = await fetch(cleanReq);
+    if (resp && (resp.ok || resp.type === 'opaque')) {
+      await cache.put(cleanReq, resp.clone());
+    }
+    return resp;
+  } catch {
+    // 3) Fallback terakhir: no-cors (opaque), agar script/style/font tetap bisa disajikan
+    try {
+      const opaqueReq = new Request(cleanReq.url, { method: 'GET', mode: 'no-cors', credentials: 'omit', redirect: 'follow' });
+      const resp = await fetch(opaqueReq);
+      if (resp && resp.type === 'opaque') {
+        await cache.put(opaqueReq, resp.clone());
+      }
+      return resp;
+    } catch {
+      return new Response('Offline', { status: 503 });
+    }
+  }
+}
+
+function revalidateInBackground(cleanReq, cache) {
+  fetch(cleanReq).then((resp) => {
+    if (resp && (resp.ok || resp.type === 'opaque')) {
+      cache.put(cleanReq, resp.clone());
+    }
+  }).catch(() => { /* diamkan */ });
+}
+
+async function defaultNetworkFallback(req) {
+  const cache = await caches.open(RUNTIME_CACHE);
+  try {
+    return await fetch(req);
+  } catch {
+    const cached = await cache.match(req);
+    return cached || new Response('Offline', { status: 503 });
+  }
+}
+
+// (Opsional) dukung skipWaiting via postMessage
+self.addEventListener('message', (event) => {
+  if (event.data === 'SKIP_WAITING') self.skipWaiting();
 });
