@@ -14,7 +14,6 @@ const PRECACHE_URLS = [
 // Pola host yang ingin kita cache saat jalan (runtime), termasuk file model USE & font
 const RUNTIME_ALLOWED_HOSTS = [
   'cdn.jsdelivr.net',
-  'cdn.tailwindcss.com',
   'cdnjs.cloudflare.com',
   'fonts.gstatic.com',                 // font yang ditarik dari CSS fontawesome
   'storage.googleapis.com',            // sebagian besar tfjs models di-host di sini
