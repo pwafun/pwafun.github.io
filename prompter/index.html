@@ -3,6 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <title>Prompt to JSON Bahasa Indonesia</title>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('✅ SW terdaftar:', reg.scope))
+            .catch(err => console.error('❌ Gagal daftar SW:', err));
+        });
+      }
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/universal-sentence-encoder"></script>
     <script src="https://cdn.tailwindcss.com"></script>
