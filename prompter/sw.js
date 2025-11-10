@@ -17,7 +17,7 @@ const PRECACHE_URLS = [
 const RUNTIME_ALLOWED_HOSTS = new Set([
   'storage.googleapis.com', // tfjs/tfhub model shard
   'tfhub.dev',              // tfhub redirector
-   'www.kaggle.com'
+  'www.kaggle.com'
 ]);
 
 // ------- Helper -------
