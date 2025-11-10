@@ -1,14 +1,15 @@
-/* sw.js — PWA runtime & precache for TFJS + USE + CDN assets
+/* sw.js — PWA runtime & precache untuk TFJS + USE + CDN assets
+   Mode: cache-first (tanpa revalidate) untuk host tertentu
    Scope: direktori tempat file ini berada (dan turunannya)
 */
 
-const VERSION = 'v1.0.0';
+const VERSION = 'v1.0.1';
 const STATIC_CACHE = `static-${VERSION}`;
 const RUNTIME_CACHE = `runtime-${VERSION}`;
 
 // URL yang dipakai langsung di HTML — tulis persis seperti di <script>/<link>
 const PRECACHE_URLS = [
-  // CDN di HTML (sesuaikan bila kamu mem-pin versi)
+  // Pin versi jika memungkinkan agar stabil
   'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs',
   'https://cdn.jsdelivr.net/npm/@tensorflow-models/universal-sentence-encoder'
 ];
@@ -17,6 +18,13 @@ const PRECACHE_URLS = [
 const RUNTIME_ALLOWED_HOSTS = new Set([
   'storage.googleapis.com', // tfjs/tfhub model shard
   'tfhub.dev',              // tfhub redirector
+  'www.kaggle.com'
+]);
+
+// Host yang TIDAK di-revalidate (cache-first murni, no SWR)
+const NO_SWR_HOSTS = new Set([
+  'storage.googleapis.com',
+  'tfhub.dev',
   'www.kaggle.com'
 ]);
 
@@ -52,20 +60,17 @@ function makeCorsOmitRequest(input) {
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(STATIC_CACHE);
-
-    // Gunakan Request khusus (cors + omit) agar tidak kena CORS credentials
     const reqs = PRECACHE_URLS.map((u) => makeCorsOmitRequest(u));
 
-    // addAll akan fail jika salah satu gagal; bungkus dengan Promise.all settle
+    // addAll keras → kita manual fetch-put agar partial success tetap lanjut
     await Promise.all(reqs.map(async (req) => {
       try {
         const resp = await fetch(req);
         if (resp && (resp.ok || resp.type === 'opaque')) {
           await cache.put(req, resp.clone());
         }
-      } catch (e) {
-        // Diamkan saja; resource ini bisa diambil saat runtime
-        // console.warn('Precache gagal:', req.url, e);
+      } catch {
+        // Diamkan; bisa diambil saat runtime
       }
     }));
   })());
@@ -100,9 +105,9 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2) Asset lintas-origin (CDN, model, fonts) -> cache-first + SWR dengan credentials: 'omit'
+  // 2) Asset lintas-origin (CDN, model, fonts) -> cache-first (tanpa revalidate untuk NO_SWR_HOSTS)
   if (isRuntimeCacheable(req.url)) {
-    event.respondWith(cacheFirstSWR(req));
+    event.respondWith(cacheFirstNoRevalidateForHosts(req));
     return;
   }
 
@@ -116,7 +121,6 @@ async function networkFirstHTML(req) {
   const cache = await caches.open(STATIC_CACHE);
   try {
     const fresh = await fetch(req);
-    // Simpan versi terbaru ke cache
     if (fresh && fresh.ok) {
       await cache.put(req, fresh.clone());
     }
@@ -127,17 +131,25 @@ async function networkFirstHTML(req) {
   }
 }
 
-async function cacheFirstSWR(req) {
+/**
+ * Cache-first cerdas:
+ * - Jika ada di cache → return cached.
+ * - Jika host TIDAK ada di NO_SWR_HOSTS dan response BUKAN opaque → revalidate di background (SWR).
+ * - Untuk host di NO_SWR_HOSTS atau response opaque → TIDAK ada revalidate. (menghindari re-download setiap hit)
+ * - Jika belum ada di cache → fetch + cache. Fallback no-cors untuk static opaque.
+ */
+async function cacheFirstNoRevalidateForHosts(req) {
   const cache = await caches.open(RUNTIME_CACHE);
-
-  // Normalisasikan request lintas-origin → CORS+omit
   const cleanReq = makeCorsOmitRequest(req);
+  const host = new URL(cleanReq.url).hostname;
 
   // 1) Coba cache dulu
   const cached = await cache.match(cleanReq);
   if (cached) {
-    // Revalidate di belakang layar (non-blocking)
-    revalidateInBackground(cleanReq, cache);
+    // Matikan SWR untuk host ini, atau bila response opaque (tak bisa andalkan header)
+    if (!NO_SWR_HOSTS.has(host) && cached.type !== 'opaque') {
+      revalidateInBackground(cleanReq, cache);
+    }
     return cached;
   }
 
@@ -149,7 +161,7 @@ async function cacheFirstSWR(req) {
     }
     return resp;
   } catch {
-    // 3) Fallback terakhir: no-cors (opaque), agar script/style/font tetap bisa disajikan
+    // 3) Fallback terakhir: no-cors (opaque), agar script/style/font tetap bisa disajikan offline ke depan
     try {
       const opaqueReq = new Request(cleanReq.url, { method: 'GET', mode: 'no-cors', credentials: 'omit', redirect: 'follow' });
       const resp = await fetch(opaqueReq);
