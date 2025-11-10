@@ -16,7 +16,8 @@ const PRECACHE_URLS = [
 // Host lintas-origin yang boleh dicache saat runtime
 const RUNTIME_ALLOWED_HOSTS = new Set([
   'storage.googleapis.com', // tfjs/tfhub model shard
-  'tfhub.dev'               // tfhub redirector
+  'tfhub.dev',              // tfhub redirector
+   'www.kaggle.com'
 ]);
 
 // ------- Helper -------
